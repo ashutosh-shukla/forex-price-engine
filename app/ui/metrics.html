@@ -1,0 +1,14 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order-flow · Price Engine</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+  <h1>Order-flow metrics, all timeframes at once</h1>
+  <div class="panel row"><label>Pair<select id="symbol"></select></label>
+    <label>History timeframe<select id="htf"></select></label><label>History candles<input id="hlimit" type="number" value="12" style="width:80px"></label>
+    <div class="muted" style="margin-left:auto" id="stamp"></div></div>
+  <div class="panel"><h2>Forming candles <span class="muted">(live, updates over the websocket · GET /v1/candles/forming)</span></h2><div class="scroll" style="max-height:none" id="forming"></div></div>
+  <div class="panel"><h2>Last closed candles with full metrics <span class="muted">(GET /v1/candles?metrics=full)</span></h2><div class="scroll" id="history"></div></div>
+  <div class="panel"><h2>How each number is calculated</h2>
+    <dl class="help" id="guide"></dl>
+    <p class="help"><b>Accuracy notes.</b> Prices are mid = (bid + ask) / 2. The move between the last tick of one candle and the first tick of the next is counted in the new candle, so 5m/1h/4h candles are exact sums of 1m candles. Runs and reversals across minute boundaries are very close approximations. History downloaded from OANDA has prices only (metrics are empty). Volume is tick count, not traded volume: forex has no central tape, so direction is inferred from quote changes.</p></div>
+</main>
+<script src="js/common.js"></script><script src="js/metrics.js"></script></body></html>

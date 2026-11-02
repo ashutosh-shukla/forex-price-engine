@@ -1,0 +1,26 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Charts · Price Engine</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+  <h1>Candles and metrics</h1>
+  <div class="panel">
+    <div class="row">
+      <label>Pair<select id="symbol"></select></label>
+      <label>Timeframe<select id="tf"></select></label>
+      <label>Candles<input id="limit" type="number" value="150" min="10" max="5000" style="width:90px"></label>
+      <label>Metrics<select id="metrics"><option value="full">full (all calculations)</option><option value="basic">basic</option><option value="none">none (OHLC only)</option></select></label>
+      <label>From (IST, optional)<input id="from" type="datetime-local"></label>
+      <label>To (IST, optional)<input id="to" type="datetime-local"></label>
+      <button id="load">Load</button><button id="next" class="ghost" disabled>Next page ›</button>
+      <label style="flex-direction:row;align-items:center;gap:6px"><input type="checkbox" id="live" checked style="min-width:0"> live update</label>
+    </div>
+    <div class="muted" id="info" style="margin-top:8px"></div>
+  </div>
+  <div class="panel"><svg id="chart" class="chart" viewBox="0 0 1100 560" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div class="two">
+    <div class="panel"><h2>Summary of the last N candles <span class="muted">(GET /v1/metrics/summary)</span></h2>
+      <div class="row"><label>Window<input id="win" type="number" value="20" style="width:80px"></label><button id="sumbtn" class="ghost">Calculate</button></div><div id="summary" class="kv" style="grid-template-columns:repeat(4,1fr);margin-top:10px"></div></div>
+    <div class="panel"><h2>Forming candle <span class="muted">(GET /v1/candles/forming)</span></h2><pre class="json" id="forming">–</pre></div>
+  </div>
+  <div class="panel"><h2>Candle table <span class="muted">(hover a column title for its formula)</span></h2><div class="scroll" id="tablewrap"></div></div>
+</main>
+<script src="js/common.js"></script><script src="js/charts.js"></script></body></html>
