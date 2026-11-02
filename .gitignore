@@ -1,0 +1,84 @@
+
+# ==========================================
+# SECRETS AND ENVIRONMENT CONFIGURATION
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# Oracle wallet and database credentials
+wallet/
+Wallet/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# ==========================================
+# PYTHON ENVIRONMENTS
+# ==========================================
+venv/
+.venv/
+env/
+ENV/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python package/build artifacts
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# ==========================================
+# LOGS
+# ==========================================
+logs/*
+!logs/.gitkeep
+
+*.log
+*.log.*
+
+# ==========================================
+# LOCAL DATABASES AND DATA
+# ==========================================
+data/*
+!data/.gitkeep
+
+*.db
+*.sqlite
+*.sqlite3
+*.dump
+*.bak
+
+# ==========================================
+# IDE AND OS FILES
+# ==========================================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ==========================================
+# TEST AND COVERAGE ARTIFACTS
+# ==========================================
+.pytest_cache/
+.coverage
+htmlcov/
+
+# ==========================================
+# TEMPORARY FILES
+# ==========================================
+*.tmp
+*.temp
+*.old
+*.orig

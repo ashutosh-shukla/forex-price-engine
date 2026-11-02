@@ -1,0 +1,12 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Live · Price Engine</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+  <h1>Live market</h1>
+  <div class="panel row">
+    <label>Candle timeframe for the metrics<select id="tf"></select></label>
+    <div class="muted" id="stats" style="margin-left:auto">waiting for data...</div>
+  </div>
+  <div id="cards" class="grid cards"></div>
+  <p class="muted" style="margin-top:16px">Prices and the forming-candle metrics arrive over the websocket. "Latency" = browser receive time minus the time the engine published the tick (same computer, so it is accurate here).</p>
+</main>
+<script src="js/common.js"></script><script src="js/live.js"></script></body></html>

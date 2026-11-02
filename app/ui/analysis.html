@@ -1,0 +1,35 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Analysis · Price Engine</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+  <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+    <div><div class="clock" id="clock">--</div><div class="muted" style="margin-top:2px">Sessions now: <span id="sess">-</span></div></div>
+    <div class="row"><label>Pair<select id="symbol"></select></label>
+      <button id="start" class="go">Start analysis</button><button id="stop" class="stop">Stop analysis</button></div>
+  </div>
+  <div id="banner" class="banner idle">loading...</div>
+
+  <div class="panel">
+    <div class="row" style="justify-content:space-between">
+      <div><b>Timeframes shown</b> <span id="tfchips"></span></div>
+      <div class="groups row" id="groups"></div>
+    </div>
+    <div class="muted" style="margin:6px 0">While analysis is ON, every candle that closes (1m, 5m, 15m, 30m, 1h) is saved here with all its values. Afterwards the app fills in OANDA's official candle and what happened next. You add your own label and note.
+      Hover a column title for its formula. <span class="warn">!</span> = the candle was already under way when the engine started (partial data).</div>
+    <div class="tablewrap"><table class="an" id="tbl"></table></div>
+  </div>
+
+  <div class="two">
+    <div class="panel"><h2>Export to CSV (times in IST)</h2>
+      <div class="row"><label>Run<select id="x-run"><option value="">all runs</option></select></label>
+        <label>From (IST)<input type="datetime-local" id="x-from"></label><label>To (IST)<input type="datetime-local" id="x-to"></label>
+        <button id="x-csv">Download candles CSV</button><button id="x-notes" class="ghost">Download notes CSV</button></div>
+      <div class="muted" style="margin-top:6px">Choosing a run fills From/To with when you pressed Start and Stop. Uses the timeframes selected above.</div></div>
+    <div class="panel"><h2>Notes</h2>
+      <div class="row"><textarea id="n-text" style="flex:1;min-width:240px" placeholder="What you see right now (saved with the current IST time)"></textarea><button id="n-add">Add note</button></div>
+      <div id="notes" style="margin-top:8px;max-height:160px;overflow:auto"></div></div>
+  </div>
+
+  <div class="panel"><h2>Live values of the candles being formed <span class="muted">(updates every second)</span></h2>
+    <div class="tablewrap" style="max-height:none"><table class="an" id="live"></table></div></div>
+</main>
+<script src="js/common.js"></script><script src="js/analysis.js"></script></body></html>

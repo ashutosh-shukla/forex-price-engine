@@ -1,0 +1,47 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>API console · Price Engine</title><link rel="stylesheet" href="style.css"></head>
+<body><main>
+  <h1>API console</h1>
+  <div class="tabs" id="tabs"><button data-t="status" class="on">System status</button><button data-t="explorer">API explorer</button><button data-t="ws">WebSocket tester</button><button data-t="admin">Admin</button></div>
+
+  <section id="t-status">
+    <div class="two">
+      <div class="panel"><h2>Feed health <span class="muted">(GET /health/ready, GET /v1/status)</span></h2><div id="health" class="muted">loading...</div><div class="scroll" style="margin-top:10px" id="feed"></div></div>
+      <div class="panel"><h2>Engine counters</h2><pre class="json" id="statusjson">–</pre></div>
+    </div>
+    <div class="panel"><h2>Keys used by this page</h2><div class="row">
+      <label>API key (X-API-Key)<input id="k-api" style="width:420px" placeholder="pek_..."></label>
+      <label>Admin key (X-Admin-Key)<input id="k-admin" style="width:300px" type="password"></label><button id="k-save" class="ghost">Save in this browser</button></div>
+      <p class="muted">In development mode these are filled in automatically from the engine (this computer only). In production never put keys in a browser: your own backend should call the engine.</p></div>
+  </section>
+
+  <section id="t-explorer" hidden>
+    <div class="two"><div class="panel"><h2>Endpoints</h2><div id="eplist"></div></div>
+    <div class="panel"><h2 id="eptitle">Pick an endpoint</h2><div id="epform" class="row"></div><div class="row" style="margin-top:10px"><button id="epsend" disabled>Send</button><span id="epmeta" class="muted"></span></div><pre class="json" id="epout">–</pre></div></div>
+  </section>
+
+  <section id="t-ws" hidden>
+    <div class="panel"><h2>WebSocket tester <span class="muted">(POST /v1/ws-token, then ws /v1/stream)</span></h2>
+      <div class="row"><button id="wsconn">Connect</button><button id="wsdisc" class="ghost">Disconnect</button>
+      <label>Channel<select id="wsch"><option>ticks</option><option>candles</option><option>candle_metrics</option></select></label>
+      <label>Pairs<input id="wssym" value="EUR_USD" style="width:200px"></label><label>Timeframes<input id="wstf" value="1m" style="width:120px"></label>
+      <button id="wssub" class="ghost">Subscribe</button><button id="wsunsub" class="ghost">Unsubscribe</button><button id="wsping" class="ghost">Ping</button><span id="wsstat" class="muted"></span></div>
+      <pre class="json" id="wslog" style="max-height:440px">–</pre></div>
+  </section>
+
+  <section id="t-admin" hidden>
+    <div class="two">
+      <div class="panel"><h2>API clients <span class="muted">(GET/POST /v1/admin/clients)</span></h2><div class="scroll" id="clients"></div>
+        <h2 style="margin-top:14px">Create a client</h2><div class="row">
+          <label>Name<input id="c-name" placeholder="my-website-backend"></label><label>Pairs (empty = all)<input id="c-syms"></label><label>Timeframes (empty = all)<input id="c-tfs"></label>
+          <label>Allowed IPs (empty = any)<input id="c-ips"></label><label>Req/min<input id="c-rate" type="number" value="6000" style="width:90px"></label></div>
+        <div class="row" style="margin-top:8px"><label style="flex-direction:row;gap:6px"><input type="checkbox" id="c-met" checked style="min-width:0">metrics</label><label style="flex-direction:row;gap:6px"><input type="checkbox" id="c-ws" checked style="min-width:0">websocket</label><label style="flex-direction:row;gap:6px"><input type="checkbox" id="c-ticks" style="min-width:0">raw ticks</label><button id="c-create">Create</button></div>
+        <pre class="json" id="c-out" hidden></pre></div>
+      <div class="panel"><h2>Pairs <span class="muted">(GET/POST/PATCH /v1/admin/pairs)</span></h2><div class="scroll" id="pairs"></div>
+        <h2 style="margin-top:14px">Add a pair</h2><div class="row"><label>Symbol (OANDA format)<input id="p-sym" placeholder="NAS100_USD"></label><label>Decimals<input id="p-dec" type="number" value="5" style="width:80px"></label><button id="p-add">Add</button></div>
+        <h2 style="margin-top:14px">Download history <span class="muted">(POST /v1/admin/backfill)</span></h2><div class="row"><label>Symbol<input id="b-sym" value="EUR_USD"></label><label>Days<input id="b-days" type="number" value="7" style="width:80px"></label><button id="b-go" class="ghost">Download</button></div>
+        <h2 style="margin-top:14px">Engine</h2><button id="stop" class="danger">Stop engine (graceful)</button></div>
+    </div>
+  </section>
+</main>
+<script src="js/common.js"></script><script src="js/console.js"></script></body></html>
