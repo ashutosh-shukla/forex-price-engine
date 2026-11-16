@@ -37,8 +37,9 @@ def read_env() -> dict:
         for line in ENV.read_text(encoding="utf-8").splitlines():
             m = re.match(r"^\s*([A-Z0-9_]+)\s*=\s*(.*?)\s*$", line)
             if m and not line.lstrip().startswith("#"):
-                out[m.group(1)] = m.group(2)
-                return out
+                out[m.group(1)] = m.group(2).strip()
+
+    return out
 
 
 def base_url() -> str:
@@ -53,7 +54,7 @@ def python_exe() -> str:
     ):
         if cand.exists():
             return str(cand)
-        return sys.executable
+    return sys.executable
 
 
 def alive(pid: int) -> bool:
@@ -88,39 +89,35 @@ def http(method: str, path: str, headers: dict | None = None, timeout: float = 5
 
 
 def cmd_init() -> None:
+    (ROOT / "logs").mkdir(exist_ok=True)
+    (ROOT / "data").mkdir(exist_ok=True)
     if not ENV.exists():
         shutil.copy(ROOT / ".env.example", ENV)
         print("Created .env from .env.example")
-        text = ENV.read_text(encoding="utf-8")
-        changed = []
-        for k in SECRETS:
-            if not re.search(rf"^{k}=.+$", text, flags=re.M):
-                text = re.sub(
-                    rf"^{k}=.*$", f"{k}={secrets.token_hex(32)}", text, flags=re.M
-                )
-                changed.append(k)
-                ENV.write_text(text, encoding="utf-8")
-                print(
-                    "Generated secrets: "
-                    + (", ".join(changed) if changed else "none needed (already set)")
-                )
-                e = read_env()
-                todo = [
-                    k
-                    for k in (
-                        "ORACLE_ADB_USER",
-                        "ORACLE_ADB_PASSWORD",
-                        "ORACLE_ADB_DSN",
-                        "ORACLE_ADB_WALLET_PASSWORD",
-                        "OANDA_API_KEY",
-                        "OANDA_ACCOUNT_ID",
-                    )
-                    if not e.get(k)
-                ]
-                if todo:
-                    print("\nNow open .env and fill in:", ", ".join(todo))
-                    (ROOT / "logs").mkdir(exist_ok=True)
-                    (ROOT / "data").mkdir(exist_ok=True)
+    text = ENV.read_text(encoding="utf-8")
+    changed = []
+    for k in SECRETS:
+        if not re.search(rf"^{k}=.+$", text, flags=re.M):
+            text = re.sub(rf"^{k}=.*$", f"{k}={secrets.token_hex(32)}", text, flags=re.M)
+            changed.append(k)
+    if changed:
+        ENV.write_text(text, encoding="utf-8")
+    print("Generated secrets: " + (", ".join(changed) if changed else "none needed (already set)"))
+    e = read_env()
+    todo = [
+        k
+        for k in (
+            "ORACLE_ADB_USER",
+            "ORACLE_ADB_PASSWORD",
+            "ORACLE_ADB_DSN",
+            "ORACLE_ADB_WALLET_PASSWORD",
+            "OANDA_API_KEY",
+            "OANDA_ACCOUNT_ID",
+        )
+        if not e.get(k)
+    ]
+    if todo:
+        print("\nNow open .env and fill in:", ", ".join(todo))
 
 
 def run_module(module: str, *args: str) -> int:
@@ -132,61 +129,54 @@ def cmd_start() -> None:
     if pid and alive(pid):
         print(f"Already running (PID {pid}). UI: {base_url()}/ui/")
         return
+    env = read_env()
     missing = [
         k
         for k in ("ORACLE_ADB_USER", "ORACLE_ADB_PASSWORD", "ORACLE_ADB_DSN", *SECRETS)
-        if not read_env().get(k)
+        if not env.get(k)
     ]
     if missing:
         sys.exit(
             f"Fill these in .env first: {', '.join(missing)}  (run: python engine_ctl.py init)"
         )
-        (ROOT / "logs").mkdir(exist_ok=True)
-        (ROOT / "data").mkdir(exist_ok=True)
-        out = open(CONSOLE, "ab")
-        kwargs = {}
-        if os.name == "nt":
-            kwargs["creationflags"] = (
-                0x00000008 | 0x00000200
-            )  # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
-        else:
-            kwargs["start_new_session"] = True
-            proc = subprocess.Popen(
-                [python_exe(), "-m", "app.run"],
-                cwd=ROOT,
-                stdout=out,
-                stderr=out,
-                stdin=subprocess.DEVNULL,
-                **kwargs,
-            )
-            PID.write_text(str(proc.pid))
-            print(f"Starting (PID {proc.pid}) ...", end="", flush=True)
-            for _ in range(60):
-                time.sleep(1)
-                if proc.poll() is not None:
-                    PID.unlink(missing_ok=True)
-                    print(
-                        "\nIt stopped right away. Last lines of logs/console.log and logs/error.log:\n"
-                    )
-                    for f in (CONSOLE, ROOT / "logs" / "error.log"):
-                        if f.exists():
-                            print(
-                                "\n".join(
-                                    f.read_text(errors="replace").splitlines()[-15:]
-                                )
-                            )
-                            sys.exit(1)
-                            try:
-                                if http("GET", "/health/live", timeout=2)[0] == 200:
-                                    print(
-                                        f" up.\n\nAPI : {base_url()}\nUI  : {base_url()}/ui/\nDocs: {base_url()}/docs\nLogs: logs\\main.log (milestones), activity.log, error.log"
-                                    )
-                                    return
-                            except Exception:
-                                print(".", end="", flush=True)
-                                print(
-                                    "\nStill starting after 60 s. Check logs/main.log and logs/error.log."
-                                )
+    (ROOT / "logs").mkdir(exist_ok=True)
+    (ROOT / "data").mkdir(exist_ok=True)
+    out = open(CONSOLE, "ab")
+    kwargs = {}
+    if os.name == "nt":
+        # DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP
+        kwargs["creationflags"] = 0x00000008 | 0x00000200
+    else:
+        kwargs["start_new_session"] = True
+    proc = subprocess.Popen(
+        [python_exe(), "-m", "app.run"],
+        cwd=ROOT,
+        stdout=out,
+        stderr=out,
+        stdin=subprocess.DEVNULL,
+        **kwargs,
+    )
+    PID.write_text(str(proc.pid))
+    print(f"Starting (PID {proc.pid}) ...", end="", flush=True)
+    for _ in range(60):
+        time.sleep(1)
+        if proc.poll() is not None:
+            PID.unlink(missing_ok=True)
+            print("\nIt stopped right away. Last lines of logs/console.log and logs/error.log:\n")
+            for f in (CONSOLE, ROOT / "logs" / "error.log"):
+                if f.exists():
+                    print("\n".join(f.read_text(errors="replace").splitlines()[-15:]))
+            sys.exit(1)
+        try:
+            if http("GET", "/health/live", timeout=2)[0] == 200:
+                print(
+                    f" up.\n\nAPI : {base_url()}\nUI  : {base_url()}/ui/\nDocs: {base_url()}/docs\n"
+                    "Logs: logs\\main.log (milestones), activity.log, error.log"
+                )
+                return
+        except Exception:
+            print(".", end="", flush=True)
+    print("\nStill starting after 60 s. Check logs/main.log and logs/error.log.")
 
 
 def cmd_stop() -> None:
@@ -210,16 +200,14 @@ def cmd_stop() -> None:
             break
         time.sleep(1)
         print(".", end="", flush=True)
-        if alive(pid):
-            print("\nDid not stop in time; forcing.")
-            if os.name == "nt":
-                subprocess.run(
-                    ["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True
-                )
-            else:
-                os.kill(pid, 9)
-                PID.unlink(missing_ok=True)
-                print("\nStopped.")
+    if alive(pid):
+        print("\nDid not stop in time; forcing.")
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/PID", str(pid), "/T", "/F"], capture_output=True)
+        else:
+            os.kill(pid, 9)
+    PID.unlink(missing_ok=True)
+    print("\nStopped.")
 
 
 def cmd_status() -> None:
@@ -235,7 +223,7 @@ def cmd_status() -> None:
         print(f"Health  : {e.read().decode()}")
     except Exception as e:
         print(f"Health  : no answer ({e})")
-        print(f"UI      : {base_url()}/ui/")
+    print(f"UI      : {base_url()}/ui/")
 
 
 def main() -> None:
