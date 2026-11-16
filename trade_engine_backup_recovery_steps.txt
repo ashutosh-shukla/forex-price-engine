@@ -1,0 +1,64 @@
+Step-by-step on a new PC
+
+1. Install the tools
+
+Python 3.11 from python.org. Tick “Add python.exe to PATH” during install. Check with python --version (3.10 or newer).
+Git for Windows.
+
+2. Clone the repo
+
+cd C:\
+git clone <your-repo-url> trade-engine
+cd trade-engine
+
+Use a short path with no spaces or brackets. Your old trade-engine (1) folder name was fragile.
+
+3. Check the Oracle database
+In the Oracle Cloud console, open Autonomous Database and make sure the state is Available. If it says Stopped, press Start. Free-tier databases stop after about 7 days of inactivity. If the database was deleted, create a new Always Free ATP database, create your user (for example ASHU) as ADMIN, and run GRANT DWROLE TO ASHU;. Under Network, add your current public IP to the access list, or allow all while testing.
+
+4. Download the wallet
+In the database page, click Database connection, then Download wallet, and set a wallet password. Unzip it into trade-engine\wallet\. Open wallet\tnsnames.ora and note the alias ending in _tp.
+
+5. Create .env
+
+copy .env.example .env
+
+Fill in these values in Notepad:
+
+ORACLE_ADB_USER, ORACLE_ADB_PASSWORD, ORACLE_ADB_WALLET_PASSWORD
+ORACLE_ADB_DSN with the exact _tp alias and no leading space, for example ORACLE_ADB_DSN=tradedatabase_tp
+OANDA_API_KEY and OANDA_ACCOUNT_ID. Generate a new key in your OANDA practice account under Manage API Access if you don’t have the old one.
+
+Leave ADMIN_API_KEY, API_KEY_PEPPER and WS_TOKEN_SECRET empty. Step 6 generates them.
+
+6. Run setup
+
+setup.bat
+
+This creates venv, installs requirements.txt, and fills in the three empty secrets.
+
+7. Test the database, then create the tables
+
+check_db.bat
+initdb.bat
+
+initdb.bat creates the PE_* tables. It is safe to run again, and on an existing database it keeps your data.
+
+8. Start the engine
+
+start.bat
+
+You should see Starting (PID ...) ... up. Then open http://127.0.0.1:8000/ui/. Use status.bat and stop.bat to check and stop it. Logs are in logs\main.log, activity.log and error.log.
+
+9. Optional: run the tests
+
+venv\Scripts\python -m tests.run_tests
+Do this now so recovery works next time
+Commit the fixed engine_ctl.py. The broken copy is probably what is in your repo. Run git add engine_ctl.py, then git commit -m "Fix engine_ctl indentation", then git push.
+Back up .env in a password manager, not in git. API_KEY_PEPPER is the important value. API keys created for your other projects (scripts.create_client) are stored as hashes made with it. If the pepper is lost and regenerated, the old keys stop working and you must create new clients.
+Keep the wallet password in the same place. You can re-download the wallet, but you set the password yourself.
+Add a .gitattributes file with these lines, so the .bat files keep Windows line endings after a clone:
+*.bat text eol=crlf
+*.py text eol=lf
+Export your data from time to time. The Analysis screen can download CSVs of candles and notes. If the Always Free database is ever deleted, those CSVs are your only backup.
+Rotate your secrets. The zip you sent me contained your real .env and wallet. Change the database password, the OANDA key and the three engine secrets. Also check that .env and wallet/ were never committed earlier in git history. .gitignore only protects files that were never added.
