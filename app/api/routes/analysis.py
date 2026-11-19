@@ -4,11 +4,14 @@ from __future__ import annotations
 import csv
 import io
 import time
+from pathlib import Path
 
+from fastapi.responses import FileResponse
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response
 from pydantic import BaseModel, Field
 
-from app.analysis.columns import DIRECTIONS, LABELS, NAMES
+from app.analysis import exporter
+from app.analysis.columns import DIRECTIONS, LABELS
 from app.api.auth import require_admin
 from app.core import jsonx
 from app.core.timeutil import ist_str
@@ -152,26 +155,30 @@ def _csv(header: list[str], rows: list[list]) -> Response:
     return Response(content="\ufeff" + buf.getvalue(), media_type="text/csv; charset=utf-8")   # BOM so Excel opens it correctly
 
 
-# the readable column names used in the CSV (time first, in IST)
-_CSV_NAMES = ["time_ist"] + [n for n in NAMES if n not in ("symbol",)]
-
-
 @router.get("/export.csv")
 async def export_candles(request: Request, symbol: str = "XAU_USD", tfs: str = "", from_ms: int | None = Query(None, alias="from"),
                          to_ms: int | None = Query(None, alias="to"), run_id: int | None = None):
     _svc(request)
     tf_list = [t for t in tfs.split(",") if t in TFS] or None
     data = await repo.fetch_rows(request.app.state.db, symbol, tf_list, from_ms, to_ms, run_id, 100_000, newest_first=False)
-    header = ["symbol"] + [("open" if n == "open_px" else "high" if n == "high_px" else "low" if n == "low_px" else "close" if n == "close_px" else n) for n in _CSV_NAMES]
-    out = []
-    for r in data:
-        vals = [r.get("symbol"), ist_str(r["ts_ms"])]
-        for n in _CSV_NAMES[1:]:
-            key = n[:-3] if n.endswith("_px") else n
-            v = r.get(key)
-            vals.append(round(v, 6) if isinstance(v, float) else v)
-        out.append(vals)
-    return _csv(header, out)
+    return Response(content="\ufeff" + exporter.candles_csv_text(data), media_type="text/csv; charset=utf-8")
+
+
+@router.get("/files")
+async def list_files(request: Request):
+    """Files written by the automatic daily export (newest first)."""
+    d = Path(request.app.state.settings.export_dir)
+    files = sorted((p for p in d.glob("*.csv")), key=lambda p: p.stat().st_mtime, reverse=True) if d.exists() else []
+    return _json({"dir": str(d), "files": [{"name": p.name, "bytes": p.stat().st_size, "modified_ist": ist_str(p.stat().st_mtime * 1000)} for p in files]})
+
+
+@router.get("/files/{name}")
+async def download_file(request: Request, name: str):
+    d = Path(request.app.state.settings.export_dir).resolve()
+    p = (d / name).resolve()
+    if p.parent != d or p.suffix != ".csv" or not p.is_file():     # blocks ../ tricks
+        raise HTTPException(404, "File not found.")
+    return FileResponse(p, media_type="text/csv", filename=p.name)
 
 
 @router.get("/export_notes.csv")

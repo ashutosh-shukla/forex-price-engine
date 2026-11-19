@@ -80,6 +80,14 @@ class Settings(BaseSettings):
     CACHE_TTL_HISTORY_S: int = 60
     CACHE_MAX_ENTRIES: int = 2000
 
+    # --- automatic daily capture (no button presses)
+    AUTO_ANALYSIS_ENABLED: bool = False
+    AUTO_ANALYSIS_SYMBOL: str = "XAU_USD"
+    AUTO_ANALYSIS_START_IST: str = "04:30"
+    AUTO_ANALYSIS_END_IST: str = "10:30"
+    AUTO_EXPORT_DELAY_MINUTES: int = 75   # wait after the window so the 60-minute outcomes are filled in
+    EXPORT_DIR: str = "./exports"
+
     # --- alerts
     ALERT_WEBHOOK_URL: str = ""
     ALERT_COOLDOWN_SECONDS: int = 900
@@ -97,6 +105,10 @@ class Settings(BaseSettings):
     @property
     def log_dir(self) -> str:
         return _abs(self.LOG_DIR)
+
+    @property
+    def export_dir(self) -> str:
+        return _abs(self.EXPORT_DIR)
 
     @property
     def data_dir(self) -> str:

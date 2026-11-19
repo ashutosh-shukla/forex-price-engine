@@ -18,6 +18,7 @@ from app.api.wsmanager import ConnectionManager
 from app.core import logs
 from app.core.config import get_settings
 from app.core.hub import Hub
+from app.analysis.scheduler import AutoCapture
 from app.analysis.service import AnalysisService
 from app.ingest.service import IngestService
 from app.store import accounts
@@ -60,12 +61,18 @@ async def lifespan(app: FastAPI):
         logs.warn("The analysis tables are not in the database yet, so the analysis screen is read-only. Run initdb.bat once to create them.")
     app.state.analysis = AnalysisService(s, db, ingest, analysis_ready)
     app.state.analysis.begin_background()
+    app.state.auto = None
+    if s.AUTO_ANALYSIS_ENABLED and analysis_ready:
+        app.state.auto = AutoCapture(s, db, app.state.analysis)
+        app.state.auto.begin()
     if s.is_dev and s.UI_ENABLED:
         await accounts.ensure_local_ui_client(db, s.API_KEY_PEPPER, Path(s.data_dir) / "local_ui.key")
     stats = asyncio.create_task(ws.stats_logger(app))
     logs.milestone(f"Ready. API on http://{s.API_HOST}:{s.API_PORT}" + (f"  UI: http://{s.API_HOST}:{s.API_PORT}/ui/" if s.UI_ENABLED else ""))
     yield
     stats.cancel()
+    if app.state.auto:
+        await app.state.auto.shutdown()
     await app.state.analysis.shutdown()
     await ingest.stop()
     await db.close()
